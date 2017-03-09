@@ -1,0 +1,3230 @@
+%!PS-Adobe-3.0
+%%Title: hyt.rb, hylib.rb
+%%For: Aaron Hall
+%%Creator: a2ps version 4.14
+%%CreationDate: Wed Jul 22 11:16:31 2015
+%%BoundingBox: 24 24 588 768
+%%DocumentData: Clean7Bit
+%%Orientation: Portrait
+%%Pages: 4
+%%PageOrder: Ascend
+%%DocumentMedia: Letter 612 792 0 () ()
+%%DocumentNeededResources: font Courier
+%%+ font Courier-Bold
+%%+ font Courier-BoldOblique
+%%+ font Courier-Oblique
+%%+ font Helvetica
+%%+ font Helvetica-Bold
+%%+ font Symbol
+%%+ font Times-Bold
+%%+ font Times-Roman
+%%DocumentProcessColors: Black 
+%%DocumentSuppliedResources: procset a2ps-a2ps-hdr
+%%+ procset a2ps-black+white-Prolog
+%%+ encoding ISO-8859-1Encoding
+%%EndComments
+/a2psdict 200 dict def
+a2psdict begin
+%%BeginProlog
+%%Copyright: (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright: (c) 1995, 96, 97, 98 Akim Demaille, Miguel Santana
+% Check PostScript language level.
+/languagelevel where {
+  pop /gs_languagelevel languagelevel def
+} {
+  /gs_languagelevel 1 def
+} ifelse
+
+% EPSF import as in the Red Book
+/BeginInclude {
+  /b4_Inc_state save def    		% Save state for cleanup
+  /dict_count countdictstack def	% Count objects on dict stack
+  /op_count count 1 sub def		% Count objects on operand stack 
+  userdict begin
+    0 setgray 0 setlinecap
+    1 setlinewidth 0 setlinejoin
+    10 setmiterlimit [ ] 0 setdash newpath
+    gs_languagelevel 1 ne {
+      false setstrokeadjust false setoverprint 
+    } if
+} bind def
+
+/EndInclude {
+  count op_count sub { pos } repeat	% Clean up stacks
+  countdictstack dict_count sub { end } repeat
+  b4_Inc_state restore
+} bind def
+
+/BeginEPSF {
+  BeginInclude
+  /showpage { } def
+} bind def
+
+/EndEPSF {
+  EndInclude
+} bind def
+
+% Page prefeed
+/page_prefeed {         % bool -> -
+  statusdict /prefeed known {
+    statusdict exch /prefeed exch put
+  } {
+    pop
+  } ifelse
+} bind def
+
+/deffont {
+  findfont exch scalefont def
+} bind def
+
+/reencode_font {
+  findfont reencode 2 copy definefont pop def
+} bind def
+
+% Function c-show (str => -)
+% centers text only according to x axis.
+/c-show { 
+  dup stringwidth pop
+  2 div neg 0 rmoveto
+  show
+} bind def
+
+% Function l-show (str => -)
+% prints texts so that it ends at currentpoint
+/l-show {
+  dup stringwidth pop neg 
+  0 
+  rmoveto show
+} bind def
+
+% center-fit show (str w => -)
+% show centered, and scale currentfont so that the width is less than w
+/cfshow {
+  exch dup stringwidth pop
+  % If the title is too big, try to make it smaller
+  3 2 roll 2 copy
+  gt
+  { % if, i.e. too big
+    exch div
+    currentfont exch scalefont setfont
+  } { % ifelse
+    pop pop 
+  }
+  ifelse
+  c-show			% center title
+} bind def
+
+% Return the y size of the current font
+% - => fontsize
+/currentfontsize {
+  currentfont /FontType get 0 eq {
+    currentfont /FontMatrix get 3 get
+  }{
+    currentfont /FontMatrix get 3 get 1000 mul
+  } ifelse
+} bind def
+
+% reencode the font
+% <encoding-vector> <fontdict> -> <newfontdict>
+/reencode { %def
+  dup length 5 add dict begin
+    { %forall
+      % <vector> <key> <val>
+      1 index /FID ne 
+      { def }{ pop pop } ifelse
+    } forall
+    /Encoding exch def % -
+
+    % Use the font's bounding box to determine the ascent, descent,
+    % and overall height; don't forget that these values have to be
+    % transformed using the font's matrix.
+    % We use `load' because sometimes BBox is executable, sometimes not.
+    % Since we need 4 numbers an not an array avoid BBox from being executed
+    /FontBBox load aload pop
+    FontMatrix transform /Ascent exch def pop
+    FontMatrix transform /Descent exch def pop
+    /FontHeight Ascent Descent sub def
+
+    % Get the underline position and thickness if they're defined.
+    % Use 1 if they are not defined.
+    currentdict /FontInfo 2 copy known
+    { get
+      /UnderlinePosition 2 copy % <FontInfo> /UP <FontInfo> /UP
+      2 copy known
+      { get }{ pop pop 1 } ifelse
+      0 exch FontMatrix transform exch pop
+      def % <FontInfo>
+
+      /UnderlineThickness 2 copy % <FontInfo> /UT <FontInfo> /UT
+      2 copy known
+      { get }{ pop pop 1 } ifelse
+      0 exch FontMatrix transform exch pop
+      def % <FontInfo>
+      pop % -
+    }{ pop pop
+    } ifelse
+
+    currentdict
+  end 
+} bind def
+
+% composite fonts for ASCII-EUC mixed string
+% Version 1.2 1/31/1990
+% Orignal Ken'ichi HANDA (handa@etl.go.jp)
+% Modified Norio Katayama (katayama@rd.nacsis.ac.jp),1998
+% Extend & Fix Koji Nakamaru (maru@on.cs.keio.ac.jp), 1999
+% Anyone can freely copy, modify, distribute this program.
+
+/copyfont {	% font-dic extra-entry-count  copyfont  font-dic
+	1 index maxlength add dict begin
+	{	1 index /FID ne 2 index /UniqueID ne and
+		{def} {pop pop} ifelse
+	} forall
+	currentdict
+	end
+} bind def
+
+/compositefont { % ASCIIFontName EUCFontName RomanScale RomanOffset Rot(T/F) compositefont font
+    /RomanRotation exch def
+    /RomanOffset exch def
+    /RomanScale exch def
+    userdict /fixeucfont_dict known not {
+	userdict begin
+	    /fixeucfont_dict 2 dict begin
+		/UpperByteEncoding [
+		    16#00 1 16#20 { pop 0 } for
+		    16#21 1 16#28 { 16#20 sub } for
+		    16#29 1 16#2F { pop 0 } for
+		    16#30 1 16#74 { 16#27 sub } for
+		    16#75 1 16#FF { pop 0 } for
+		] def
+	        /LowerByteEncoding [
+		    16#00 1 16#A0 { pop /.notdef } for
+		    16#A1 1 16#FE { 16#80 sub 16 2 string cvrs
+				    (cXX) dup 1 4 -1 roll
+				    putinterval cvn } for
+		    /.notdef
+		] def
+		currentdict
+	    end def
+	end
+    } if
+    findfont dup /FontType get 0 eq {
+	14 dict begin
+	    %
+	    % 7+8 bit EUC font
+	    %
+	    12 dict begin
+		/EUCFont exch def
+		/FontInfo (7+8 bit EUC font) readonly def
+		/PaintType 0 def
+		/FontType 0 def
+		/FontMatrix matrix def
+		% /FontName
+		/Encoding fixeucfont_dict /UpperByteEncoding get def
+		/FMapType 2 def
+		EUCFont /WMode known
+		{ EUCFont /WMode get /WMode exch def }
+		{ /WMode 0 def } ifelse
+		/FDepVector [
+		    EUCFont /FDepVector get 0 get
+		    [ 16#21 1 16#28 {} for 16#30 1 16#74 {} for ]
+		    {
+			13 dict begin
+			    /EUCFont EUCFont def
+			    /UpperByte exch 16#80 add def	
+			    % /FontName
+			    /FontInfo (EUC lower byte font) readonly def
+			    /PaintType 0 def
+			    /FontType 3 def
+			    /FontMatrix matrix def
+			    /FontBBox {0 0 0 0} def
+			    /Encoding
+				fixeucfont_dict /LowerByteEncoding get def
+			    % /UniqueID
+			    % /WMode
+			    /BuildChar {
+				gsave
+				exch dup /EUCFont get setfont
+				/UpperByte get
+				2 string
+				dup 0 4 -1 roll put
+				dup 1 4 -1 roll put
+				dup stringwidth setcharwidth
+				0 0 moveto show
+				grestore
+			    } bind def
+			    currentdict
+			end
+			/lowerbytefont exch definefont
+		    } forall
+		] def
+		currentdict
+	    end
+	    /eucfont exch definefont
+	    exch
+	    findfont 1 copyfont dup begin
+		RomanRotation {
+			/FontMatrix FontMatrix
+			[ 0 RomanScale neg RomanScale 0 RomanOffset neg 0 ]
+			matrix concatmatrix def
+		}{
+			/FontMatrix FontMatrix
+			[ RomanScale 0 0 RomanScale 0 RomanOffset ] matrix concatmatrix
+			def
+			/CDevProc
+			    {pop pop pop pop 0 exch -1000 exch 2 div 880} def
+		} ifelse
+	    end
+	    /asciifont exch definefont
+	    exch
+	    /FDepVector [ 4 2 roll ] def
+	    /FontType 0 def
+	    /WMode 0 def
+	    /FMapType 4 def
+	    /FontMatrix matrix def
+	    /Encoding [0 1] def
+	    /FontBBox {0 0 0 0} def
+%	    /FontHeight 1.0 def % XXXX
+	    /FontHeight RomanScale 1.0 ge { RomanScale }{ 1.0 } ifelse def
+	    /Descent -0.3 def   % XXXX
+	    currentdict
+	end
+	/tmpfont exch definefont
+	pop
+	/tmpfont findfont
+    }{
+	pop findfont 0 copyfont
+    } ifelse
+} def	
+
+/slantfont {	% FontName slant-degree  slantfont  font'
+    exch findfont 1 copyfont begin
+    [ 1 0 4 -1 roll 1 0 0 ] FontMatrix exch matrix concatmatrix
+    /FontMatrix exch def
+    currentdict
+    end
+} def
+
+% Function print line number (<string> # -)
+/# {
+  gsave
+    sx cw mul neg 2 div 0 rmoveto
+    f# setfont
+    c-show
+  grestore
+} bind def
+
+% -------- Some routines to enlight plain b/w printings ---------
+
+% Underline
+% width --
+/dounderline {
+  currentpoint
+  gsave
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    0 rlineto
+    stroke
+  grestore
+} bind def
+
+% Underline a string
+% string --
+/dounderlinestring {
+  stringwidth pop
+  dounderline
+} bind def
+
+/UL {
+  /ul exch store
+} bind def
+
+% Draw a box of WIDTH wrt current font
+% width --
+/dobox {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get currentfontsize mul rlineto
+    neg 0 rlineto
+    closepath
+    stroke
+  grestore
+} bind def
+
+/BX {
+  /bx exch store
+} bind def
+
+% Box a string
+% string --
+/doboxstring {
+  stringwidth pop
+  dobox
+} bind def
+
+%
+% ------------- Color routines ---------------
+%
+/FG /setrgbcolor load def
+
+% Draw the background
+% width --
+/dobackground {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get currentfontsize mul rlineto
+    neg 0 rlineto
+    closepath
+    bgcolor aload pop setrgbcolor
+    fill
+  grestore
+} bind def
+
+% Draw bg for a string
+% string --
+/dobackgroundstring {
+  stringwidth pop
+  dobackground
+} bind def
+
+
+/BG {
+  dup /bg exch store
+  { mark 4 1 roll ] /bgcolor exch store } if
+} bind def
+
+
+/Show {
+  bg { dup dobackgroundstring } if
+  ul { dup dounderlinestring } if
+  bx { dup doboxstring } if
+  show
+} bind def
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T {
+  cw mul x0 add
+  bg { dup currentpoint pop sub dobackground } if
+  ul { dup currentpoint pop sub dounderline } if
+  bx { dup currentpoint pop sub dobox } if
+  y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n {
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+/S {
+  Show
+} bind def
+
+%%BeginResource: procset a2ps-a2ps-hdr 2.0 2
+%%Copyright: (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright: (c) 1995, 96, 97, 98 Akim Demaille, Miguel Santana
+% Function title: prints page header.
+% <ct> <rt> <lt> are passed as argument
+/title { 
+  % 1. Draw the background
+  x v get y v get moveto
+  gsave
+    0 th 2 div neg rmoveto 
+    th setlinewidth
+    0.95 setgray
+    pw 0 rlineto stroke
+  grestore
+  % 2. Border it
+  gsave
+    0.7 setlinewidth
+    pw 0 rlineto
+    0 th neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+  % stk: ct rt lt
+  x v get y v get th sub 1 add moveto
+%%IncludeResource: font Helvetica
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  % 3. The left title
+  gsave
+    dup stringwidth pop fnfs 0.8 mul add exch % leave space took on stack
+    fnfs 0.8 mul hm rmoveto
+    show			% left title
+  grestore
+  exch
+  % stk: ct ltw rt
+  % 4. the right title
+  gsave
+    dup stringwidth pop fnfs 0.8 mul add exch % leave space took on stack
+    dup
+    pw exch stringwidth pop fnfs 0.8 mul add sub
+    hm
+    rmoveto
+    show			% right title
+  grestore
+  % stk: ct ltw rtw
+  % 5. the center title
+  gsave
+    pw 3 1 roll
+    % stk: ct pw ltw rtw
+    3 copy 
+    % Move to the center of the left room
+    sub add 2 div hm rmoveto
+    % What is the available space in here?
+    add sub fnfs 0.8 mul sub fnfs 0.8 mul sub
+    % stk: ct space_left
+%%IncludeResource: font Helvetica-Bold
+  fHelvetica-Bold fnfs scalefont setfont
+    cfshow
+  grestore
+} bind def
+
+% Function border: prints virtual page border
+/border { %def
+  gsave				% print four sides
+    0 setgray
+    x v get y v get moveto
+    0.7 setlinewidth		% of the square
+    pw 0 rlineto
+    0 ph neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+} bind def
+
+% Function water: prints a water mark in background
+/water { %def
+  gsave
+    scx scy moveto rotate
+%%IncludeResource: font Times-Bold
+  fTimes-Bold 100 scalefont setfont
+    .97 setgray
+    dup stringwidth pop 2 div neg -50 rmoveto
+    show
+  grestore
+} bind def
+
+% Function rhead: prints the right header
+/rhead {  %def
+  lx ly moveto
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  l-show
+} bind def
+
+% Function footer (cf rf lf -> -)
+/footer {
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  dx dy moveto
+  show
+
+  snx sny moveto
+  l-show
+  
+  fnx fny moveto
+  c-show
+} bind def
+%%EndResource
+%%BeginResource: procset a2ps-black+white-Prolog 2.0 1
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T { 
+  cw mul x0 add y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n { %def
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+}  bind def
+
+/S {
+  Show
+} bind def
+
+/p {
+  false UL
+  false BX
+  fCourier bfs scalefont setfont
+  Show
+} bind def
+
+/sy {
+  false UL
+  false BX
+  fSymbol bfs scalefont setfont
+  Show
+} bind def
+
+/k {
+  false UL
+  false BX
+  fCourier-Oblique bfs scalefont setfont
+  Show
+} bind def
+
+/K {
+  false UL
+  false BX
+  fCourier-Bold bfs scalefont setfont
+  Show
+} bind def
+
+/c {
+  false UL
+  false BX
+  fCourier-Oblique bfs scalefont setfont
+  Show
+} bind def
+
+/C {
+  false UL
+  false BX
+  fCourier-BoldOblique bfs scalefont setfont
+  Show 
+} bind def
+
+/l {
+  false UL
+  false BX
+  fHelvetica bfs scalefont setfont
+  Show
+} bind def
+
+/L {
+  false UL
+  false BX
+  fHelvetica-Bold bfs scalefont setfont
+  Show 
+} bind def
+
+/str{
+  false UL
+  false BX
+  fTimes-Roman bfs scalefont setfont
+  Show
+} bind def
+
+/e{
+  false UL
+  true BX
+  fHelvetica-Bold bfs scalefont setfont
+  Show
+} bind def
+
+%%EndResource
+%%EndProlog
+%%BeginSetup
+%%IncludeResource: font Courier
+%%IncludeResource: font Courier-Oblique
+%%IncludeResource: font Courier-Bold
+%%IncludeResource: font Times-Roman
+%%IncludeResource: font Symbol
+%%IncludeResource: font Courier-BoldOblique
+%%BeginResource: encoding ISO-8859-1Encoding
+/ISO-8859-1Encoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/space /exclam /quotedbl /numbersign /dollar /percent /ampersand /quoteright 
+/parenleft /parenright /asterisk /plus /comma /minus /period /slash 
+/zero /one /two /three /four /five /six /seven 
+/eight /nine /colon /semicolon /less /equal /greater /question 
+/at /A /B /C /D /E /F /G 
+/H /I /J /K /L /M /N /O 
+/P /Q /R /S /T /U /V /W 
+/X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore 
+/quoteleft /a /b /c /d /e /f /g 
+/h /i /j /k /l /m /n /o 
+/p /q /r /s /t /u /v /w 
+/x /y /z /braceleft /bar /braceright /asciitilde /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/space /exclamdown /cent /sterling /currency /yen /brokenbar /section 
+/dieresis /copyright /ordfeminine /guillemotleft /logicalnot /hyphen /registered /macron 
+/degree /plusminus /twosuperior /threesuperior /acute /mu /paragraph /bullet 
+/cedilla /onesuperior /ordmasculine /guillemotright /onequarter /onehalf /threequarters /questiondown 
+/Agrave /Aacute /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla 
+/Egrave /Eacute /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis 
+/Eth /Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply 
+/Oslash /Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn /germandbls 
+/agrave /aacute /acircumflex /atilde /adieresis /aring /ae /ccedilla 
+/egrave /eacute /ecircumflex /edieresis /igrave /iacute /icircumflex /idieresis 
+/eth /ntilde /ograve /oacute /ocircumflex /otilde /odieresis /divide 
+/oslash /ugrave /uacute /ucircumflex /udieresis /yacute /thorn /ydieresis 
+] def
+%%EndResource
+% Initialize page description variables.
+/sh 792 def
+/sw 612 def
+/llx 24 def
+/urx 588 def
+/ury 768 def
+/lly 24 def
+/#copies 1 def
+/th 15.000000 def
+/fnfs 11 def
+/bfs 4.536489 def
+/cw 2.721893 def
+
+% Dictionary for ISO-8859-1 support
+/iso1dict 8 dict begin
+  /fCourier ISO-8859-1Encoding /Courier reencode_font
+  /fCourier-Bold ISO-8859-1Encoding /Courier-Bold reencode_font
+  /fCourier-BoldOblique ISO-8859-1Encoding /Courier-BoldOblique reencode_font
+  /fCourier-Oblique ISO-8859-1Encoding /Courier-Oblique reencode_font
+  /fHelvetica ISO-8859-1Encoding /Helvetica reencode_font
+  /fHelvetica-Bold ISO-8859-1Encoding /Helvetica-Bold reencode_font
+  /fTimes-Bold ISO-8859-1Encoding /Times-Bold reencode_font
+  /fTimes-Roman ISO-8859-1Encoding /Times-Roman reencode_font
+currentdict end def
+/bgcolor [ 0 0 0 ] def
+/bg false def
+/ul false def
+/bx false def
+% The font for line numbering
+/f# /Helvetica findfont bfs .6 mul scalefont def
+/fSymbol /Symbol findfont def
+/hm fnfs 0.25 mul def
+/pw
+   cw 101.400000 mul
+def
+/ph
+   701.794850 th add
+def
+/pmw urx llx sub pw 2 mul sub 1 div def
+/pmh 0 def
+/v 0 def
+/x [
+  0
+  dup pmw add pw add
+] def
+/y [
+  pmh ph add 0 mul ph add
+  dup
+] def
+/scx sw 2 div def
+/scy sh 2 div def
+/snx urx def
+/sny lly 2 add def
+/dx llx def
+/dy sny def
+/fnx scx def
+/fny dy def
+/lx snx def
+/ly ury fnfs 0.8 mul sub def
+/sx 0 def
+/tab 8 def
+/x0 0 def
+/y0 0 def
+%%EndSetup
+
+%%Page: (1-2) 1
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 1.905325 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(#!/usr/bin/env ruby) c n
+(# -*- coding: utf-8 -*-) N
+() p n
+(# $KCODE = 'u') c n
+(# require 'jcode') N
+() p n
+(require) K
+( ') p
+(optparse) str
+(') p n
+() N
+(#require 'hylib') c n
+(require) K
+( File.join\(File.dirname\($0\), ') p
+(hylib) str
+('\)) p n
+() N
+(def nl_strip\(str\)) N
+(   str.tr_s\(") S
+(\\n) str
+(", ") p
+(\302\266) str
+("\)) p n
+(end) K n
+() p n
+(def perform_listing\(hylites, options\)) N
+(   hylites.each_name ) S
+(do) K
+( |attrib|) p n
+(      level = attrib.level - 2) N
+(      indent = ') S
+(  ) str
+(' * level) p n
+(      ) S
+(puts) K
+( ") p
+(#{indent}#{attrib.name}-) str
+(") p n
+() N
+(      attrib.hyliteRefs.each ) S
+(do) K
+( |hy|  ) p
+(# should be only one) c n
+(         ) p
+(if) K
+( options[:attributes]) p n
+(            attr_str = \(hy.attributes - [attrib]\).map{|a| a.to_s_fancy}.join\(') S
+( ) str
+('\)) p n
+(            ) S
+(puts) K
+( ") p
+(#{indent}  :#{attr_str}) str
+(" ) p
+(if) K
+( attr_str.length > 0) p n
+(         ) S
+(end) K n
+(         ) p
+(if) K
+( options[:text]) p n
+(            hy.texts.each {|t| ) S
+(puts) K
+( ") p
+(#{indent}  \342M-^@M-^\\#{nl_strip\(t.strip\)}) str
+("}) p n
+(         ) S
+(end) K n
+(         ) p
+(if) K
+( options[:locate]) p n
+(            hy.locations.each {|loc| ) S
+(puts) K
+( ") p
+(#{indent}  @#{loc.to_s}) str
+("}) p n
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+(   ) p n
+(   hylites.each_anon ) S
+(do) K
+( |hylite|) p n
+(      ) S
+(puts) K
+( hylite.name_str) p n
+() N
+(      ) S
+(if) K
+( options[:attributes]) p n
+(         attr_str = hylite.attributes.map{|a| a.to_s_fancy}.join\(') S
+( ) str
+('\)) p n
+(         ) S
+(puts) K
+( ") p
+(  :#{attr_str}) str
+(" ) p
+(if) K
+( attr_str.length > 0) p n
+(      ) S
+(end) K n
+(      ) p
+(if) K
+( options[:text]) p n
+(         hylite.texts.each {|t| ) S
+(puts) K
+( ") p
+(  \342M-^@M-^\\#{nl_strip\(t.strip\)}) str
+("}) p n
+(      ) S
+(end) K n
+(      ) p
+(if) K
+( options[:locate]) p n
+(         hylite.locations.each {|loc| ) S
+(puts) K
+( ") p
+(  @#{loc.to_s}) str
+("}) p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+(end) N
+() p n
+(def perform_dir\(hylites, options\)) N
+(   hylites.each_attr ) S
+(do) K
+( |attrib|) p n
+(      level = attrib.level - 1) N
+(      indent = ') S
+(  ) str
+(' * level) p n
+(      count = attrib.hyliteRefs.size) N
+(      ) S
+(case) K
+( count) p n
+(      ) S
+(when) K
+( 0) p n
+(         ) S
+(puts) K
+( ") p
+(#{indent}#{attrib.name}) str
+(") p n
+(      ) S
+(when) K
+( 1) p n
+(         ) S
+(puts) K
+( ") p
+(#{indent}#{attrib.name} \302\267) str
+(") p n
+(      ) S
+(else) K n
+(         ) p
+(puts) K
+( ") p
+(#{indent}#{attrib.name} \(#{count}\)) str
+(") p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+(end) N
+() p n
+(def use_set\(wset, options, optdata\)) N
+(   def scan_working_set\(wset\)) N
+(      hylites = HyliteSet.new) N
+(      wset.each_file ) S
+(do) K
+( |f|) p n
+(         ) S
+(#puts "scanning #{f}\342M-^@\246") c n
+(         scanner = Scanner.new\(f\)) p n
+(         scanner.find_all_hylites\(hylites\)) N
+(      ) S
+(end) K n
+(      hylites) p n
+(   ) S
+(end) K n
+() p n
+(   ) S
+(if) K
+( options[:covert]) p n
+(      wset.see_hidden_files = ) S
+(true) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(if) K
+( options[:debug_lws]) p n
+(      ) S
+(puts) K
+( ") p
+(Working set is:) str
+(") p n
+(      wset.each_file ) S
+(do) K
+( |f|) p n
+(         ) S
+(puts) K
+( ") p
+(  #{f}) str
+(") p n
+(      ) S
+(end) K n
+(   ) p
+(elsif) K
+( options[:debug_hycount]) p n
+(      hylites = scan_working_set\(wset\)) N
+(      ) S
+(puts) K
+( ") p
+(Found #{hylites.hylites.size} hylites) str
+(") p n
+(   ) S
+(elsif) K
+( options[:dir]) p n
+(      hylites = scan_working_set\(wset\)) N
+(      perform_dir\(hylites, options\)) N
+(   ) S
+(else) K n
+(      ) p
+(# if no other commands, do a listing) c n
+(      hylites = scan_working_set\(wset\)) p n
+() N
+(      ) S
+(if) K
+( options[:fname]) p n
+(         hylites = hylites.filter_name\(optdata[:fname]\)) N
+(      ) S
+(end) K n
+(      ) p
+(if) K
+( options[:fgroup]) p n
+(         hylites = hylites.filter_group\(optdata[:fgroup]\)) N
+(      ) S
+(end) K n
+(      ) p
+(if) K
+( options[:fattr]) p n
+(         hylites = hylites.filter_attr\(optdata[:fattr]\)) N
+(      ) S
+(end) K n
+(      perform_listing\(hylites, options\)) p n
+(   ) S
+(end) K n
+(end) N
+() p n
+() N
+(# perform option parsing) c n
+(options = {}) p n
+(optdata = {}) N
+(optparse = OptionParser.new ) S
+(do) K
+( |opts|) p n
+(   opts.banner = ") S
+(Usage: hyt.rb command [options] [file1 file2 ...]) str
+(") p n
+() N
+(   options[:dir] = ) S
+(false) K n
+(   opts.on\(') p
+(-d) str
+(', ') p
+(--dir) str
+(', ') p
+(List a directory of all attributes) str
+('\) ) p
+(do) K n
+(      options[:dir] = ) p
+(true) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(#########################################################) c n
+(   ) p
+(# options controlling what files to examine) c n
+() p n
+(   options[:setfile] = ) S
+(false) K n
+(   opts.on\(') p
+(-s) str
+(', ') p
+(--set) str
+(', ') p
+(Use the specified working set file) str
+('\) ) p
+(do) K n
+(      options[:setfile] = ) p
+(true) K n
+(      optdata[:setfile] = ARGV.shift) p n
+(   ) S
+(end) K n
+() p n
+(   options[:covert] = ) S
+(false) K n
+(   opts.on\(') p
+(-c) str
+(', ') p
+(--covert) str
+(', ') p
+(Also examine covert \(hidden\) files) str
+('\) ) p
+(do) K n
+(      options[:covert] = ) p
+(true) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(#########################################################) c n
+(   ) p
+(# options controlling what to look for \(filtering\)) c n
+(   options[:fname] = ) p
+(false) K n
+(   opts.on\(') p
+(-n) str
+(', ') p
+(--name) str
+(', ') p
+(Search for the given name) str
+('\) ) p
+(do) K n
+(      options[:fname] = ) p
+(true) K n
+(      optdata[:fname] = ARGV.shift) p n
+(   ) S
+(end) K n
+() p n
+(   options[:fgroup] = ) S
+(false) K n
+(   opts.on\(') p
+(-g) str
+(', ') p
+(--group) str
+(', ') p
+(Search for the name group) str
+('\) ) p
+(do) K n
+(      options[:fgroup] = ) p
+(true) K n
+(      optdata[:fgroup] ||= []) p n
+(      optdata[:fgroup] << ARGV.shift) N
+(   ) S
+(end) K n
+() p n
+(   options[:fattr] = ) S
+(false) K n
+(   opts.on\(') p
+(-A) str
+(', ') p
+(--fattr) str
+(', ') p
+(Filter on the given attribute) str
+('\) ) p
+(do) K n
+(      options[:fattr] = ) p
+(true) K n
+(hyt.rb) (Page 1/2) (Jul 22, 15 11:16) title
+border
+/v 1 store
+/x0 x v get 1.905325 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(      optdata[:fattr] ||= []) p n
+(      optdata[:fattr] << ARGV.shift) N
+(   ) S
+(end) K n
+() p n
+(   ) S
+(#########################################################) c n
+(   ) p
+(# options controlling what's shown) c n
+() p n
+(   options[:attributes] = ) S
+(false) K n
+(   opts.on\(') p
+(-a) str
+(', ') p
+(--attrib) str
+(', ') p
+(List attributes) str
+('\) ) p
+(do) K n
+(      options[:attributes] = ) p
+(true) K n
+(   ) p
+(end) K n
+() p n
+(   options[:locate] = ) S
+(false) K n
+(   opts.on\(') p
+(-l) str
+(', ') p
+(--location) str
+(', ') p
+(List locations) str
+('\) ) p
+(do) K n
+(      options[:locate] = ) p
+(true) K n
+(   ) p
+(end) K n
+() p n
+(   options[:text] = ) S
+(false) K n
+(   opts.on\(') p
+(-t) str
+(', ') p
+(--text) str
+(', ') p
+(List text comment\(s\)) str
+('\) ) p
+(do) K n
+(      options[:text] = ) p
+(true) K n
+(   ) p
+(end) K n
+(   ) p n
+(   ) S
+(#########################################################) c n
+(   ) p
+(# options controlling debugging info) c n
+() p n
+(   options[:debug_lws] = ) S
+(false) K n
+(   opts.on\(') p
+(--d_lws) str
+(', ') p
+(Debug: list working set) str
+('\) ) p
+(do) K n
+(      options[:debug_lws] = ) p
+(true) K n
+(   ) p
+(end) K n
+(   options[:debug_hycount] = ) p
+(false) K n
+(   opts.on\(') p
+(--d_hyc) str
+(', ') p
+(Debug: count hylites) str
+('\) ) p
+(do) K n
+(      options[:debug_hycount] = ) p
+(true) K n
+(   ) p
+(end) K n
+() p n
+(   opts.on\(') S
+(-h) str
+(', ') p
+(--help) str
+(', ') p
+(Display this screen) str
+('\) ) p
+(do) K n
+(      ) p
+(puts) K
+( opts) p n
+(      ) S
+(exit) K n
+(   ) p
+(end) K n
+() p n
+(   opts.on\(') S
+(-v) str
+(', ') p
+(--version) str
+(', ') p
+(Display the version) str
+('\) ) p
+(do) K n
+(      ) p
+(puts) K
+( VersionStr) p n
+(      ) S
+(exit) K n
+(   ) p
+(end) K n
+(end) N
+(optparse.parse!) p n
+() N
+(# perform command dispatch) c n
+(begin) K n
+(   ) p
+(if) K
+( ARGV.size == 0) p n
+(      ) S
+(if) K
+( File::readable?\(") p
+(./.hylite) str
+("\)) p n
+(         wset = WorkingSet.new\(") S
+(./.hylite) str
+("\)) p n
+(         use_set\(wset, options, optdata\)) N
+(      ) S
+(end) K n
+(   ) p
+(elsif) K
+( options[:setfile]) p n
+(      ) S
+(#setfile = ARGV.shift) c n
+(      setfile = optdata[:setfile]) p n
+(      wset = WorkingSet.new\(setfile\)) N
+(      use_set\(wset, options, optdata\)) N
+(   ) S
+(else) K n
+(      ) p
+(# pull all filenames from the command line and call them the working set) c n
+(      wset = ManualSet.new\(*ARGV\)) p n
+(      use_set\(wset, options, optdata\)) N
+(   ) S
+(end) K n
+(rescue) S
+( Exception => e) p n
+(   ) S
+(puts) K
+( ') p
+(hyt top error\342M-^@\246) str
+(') p n
+(   ) S
+(puts) K
+( e.message) p n
+(   ) S
+(puts) K
+( e.backtrace) p n
+(end) K n
+() p n
+(hyt.rb) (Page 2/2) (Jul 22, 15 11:16) title
+border
+grestore
+(Printed by Aaron Hall) rhead
+() (1/4) (Wednesday July 22, 2015) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (1-2) 2
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 1.905325 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(#!/usr/bin/env ruby) c n
+(# -*- encoding: utf-8 -*-) N
+() p n
+(# $KCODE = 'u') c n
+() p n
+(#########1#########2#########3#########4#########5#########6#########7#########8#########9########10) c n
+() p n
+(# require 'jcode') c n
+(require) K
+( ') p
+(yaml) str
+(') p n
+(require) K
+( ') p
+(set) str
+(') p n
+() N
+() N
+(VersionStr = ') S
+(Hylites 107 \302\271JZ7L) str
+(') p n
+() N
+(# A hylite object. Each hylite has sets \(Array really\) of attributes, texts, and locations.) c n
+(#) N
+(# Each attribute is a reference to a node in the attribute tree, only one of which will be the name.) N
+(# The hylite object caches requests for its name string, as common as that is.) N
+(#) N
+(# Each text is a string of the text part of one writing of this hylite.) N
+(#) N
+(# Each location is a file location of a writing of the hylite.) N
+() p n
+(class Hylite) N
+(   ) S
+(attr_reader) K
+( :attributes, :texts, :locations) p n
+(   ) S
+(attr_writer) K
+( :texts, :locations) p n
+(   ) N
+(   @@anon_id = 1) N
+() N
+(   def initialize\(\)) N
+(      @attributes = Array.new) N
+(      @texts = Array.new) N
+(      @locations = Array.new) N
+(   ) S
+(end) K n
+() p n
+(   def anonymous?) N
+(      not @attributes.any? ) S
+(do) K
+( |) p
+(attr) K
+(|) p n
+(         runner = ) S
+(attr) K n
+(         ) p
+(while) K
+( runner.upRef) p n
+(            ) S
+(if) K
+( runner.name == ') p
+(_Name) str
+(' and runner.upRef.name == ') p
+(_Root) str
+(') p n
+(               ) S
+(break) K
+( ) p
+(true) K n
+(            ) p
+(else) K n
+(               runner = runner.upRef) p n
+(            ) S
+(end) K n
+(         ) p
+(end) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   def name_str) N
+(      ) S
+(if) K
+( @name_str) p n
+(         @name_str) N
+(      ) S
+(else) K n
+(         @attributes.each ) p
+(do) K
+( |) p
+(attr) K
+(|) p n
+(            attr_a = ) S
+(attr) K
+(.to_a) p n
+(            ) S
+(if) K
+( attr_a.size >= 2 and attr_a[0] == ') p
+(_Root) str
+(' and attr_a[1] == ') p
+(_Name) str
+(') p n
+(               @name_str = attr_a.drop\(2\).join\(') S
+(-) str
+('\)) p n
+(            ) S
+(end) K n
+(         ) p
+(end) K n
+(         ) p
+(unless) K
+( @name_str) p n
+(            @name_str = ") S
+(_Anon-%d) str
+(" % [@@anon_id]) p n
+(            @@anon_id += 1) N
+(         ) S
+(end) K n
+(         @name_str) p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   def add_attribute\(attrib\)) N
+(      @attributes << attrib ) S
+(unless) K
+( @attributes.) p
+(include) K
+(?\(attrib\)) p n
+(   ) S
+(end) K n
+() p n
+(   def to_s) N
+(      result = String.new\(") S
+(hylite #{name_str}: ) str
+("\)) p n
+(      attributes.each ) S
+(do) K
+( |attribute|) p n
+(         result << attribute.to_s << ') S
+( ) str
+(') p n
+(      ) S
+(end) K n
+(      result << ') p
+(:) str
+(') p n
+(      texts.each ) S
+(do) K
+( |text|) p n
+(         result << text << ') S
+(``) str
+(') p n
+(      ) S
+(end) K n
+(      ) p
+(return) K
+( result) p n
+(   ) S
+(end) K n
+(end) N
+() p n
+() N
+(# Represents one location of a Hylite \(which may have several\). Each location is a combination of a) c n
+(# filename and line number.) N
+() p n
+(class Location) N
+(   def initialize\(file, line\)) N
+(      @file = file) N
+(      @line = line) N
+(   ) S
+(end) K n
+() p n
+(   ) S
+(attr_reader) K
+( :file, :line) p n
+(   ) S
+(attr_writer) K
+( :file, :line) p n
+() N
+(   def to_s) N
+(      ") S
+(#{@file}:#{@line}) str
+(") p n
+(   ) S
+(end) K n
+(end) N
+() p n
+() N
+(# A single node in the attribute tree. These attribute nodes can represent true attributes or) c n
+(# names, if in the right \342M-^@M-^\\directory\342M-^@M-^]. Several of the methods are for walking the tre) N
+(e, as the) N
+(# root node can be the entry point for traversing the tree.) N
+(#) N
+(# An attribute node has a string for its own name, a reference to its single parent node,) N
+(# a map of its children indexed by their names \(for convenience\), and a list of all hylite) N
+(# objects that reference this attribute\342M-^@M-^Twhether as their name or as an attribute.) N
+(#) N
+(# All attributes begining with an underscore are reserved for internal use. In particular this) N
+(# implementation uses these reserved names:) N
+(#    _Root the root of the attrib tree) N
+(#    _Name the root of the name subtree, a child of _Root) N
+(#    _Anon sometimes represents the root name of anonymous hylites \(not) N
+(#          stored in the tree\)) N
+() p n
+(class AttribNode) N
+(   ) S
+(attr_reader) K
+( :name, :upRef, :downRefs, :hyliteRefs) p n
+(   ) S
+(attr_writer) K
+( :upRef, :downRefs, :hyliteRefs) p n
+() N
+(   def initialize\(name\)) N
+(      @name = name) N
+(      @downRefs = Hash.new) N
+(      @hyliteRefs = Array.new) N
+(   ) S
+(end) K n
+() p n
+(   def seek\(attribName\)) N
+(      runner = self) N
+(      attribName.each_line\(') S
+(-) str
+('\) ) p
+(do) K
+( |partName|) p n
+(         runner = runner.downRefs[partName.) S
+(chomp) K
+(\(') p
+(-) str
+('\)]) p n
+(         ) S
+(return) K
+( runner ) p
+(if) K
+( \(runner == ) p
+(nil) K
+(\)) p n
+(      ) S
+(end) K n
+(      ) p
+(return) K
+( runner) p n
+(   ) S
+(end) K n
+() p n
+(   def seekMake\(attrib_name\)) N
+(      runner = self) N
+(      attrib_name.each_line\(') S
+(-) str
+('\) ) p
+(do) K
+( |part_name|) p n
+(         part_name.) S
+(chomp!) K
+(\(') p
+(-) str
+('\)) p n
+(         old_runner = runner) N
+(         runner = runner.downRefs[part_name]) N
+(         ) S
+(if) K
+( runner == ) p
+(nil) K
+(                                   ) p
+(# then create an attribute node there) c n
+(            runner = AttribNode.new\(part_name\)) p n
+(            runner.upRef = old_runner) N
+(            old_runner.downRefs[part_name] = runner) N
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+(      ) p
+(return) K
+( runner) p n
+(   ) S
+(end) K n
+() p n
+(   def level) N
+(      lev = 0) N
+(hylib.rb) (Page 1/6) (Jul 22, 15 11:16) title
+border
+/v 1 store
+/x0 x v get 1.905325 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(      runner = self) p n
+(      ) S
+(while) K
+( runner.upRef != ) p
+(nil) K n
+(         lev += 1) p n
+(         runner = runner.upRef) N
+(      ) S
+(end) K n
+(      lev) p n
+(   ) S
+(end) K n
+() p n
+(   def to_s) N
+(      ) S
+(if) K
+( @upRef == ) p
+(nil) K n
+(         ") p
+(#{@name}) str
+(") p n
+(      ) S
+(else) K n
+(         ") p
+(#{@upRef.to_s}-#{@name}) str
+(") p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   def to_s_fancy) N
+(      ) S
+(if) K
+( @upRef == ) p
+(nil) K n
+(         ) p
+(nil) K n
+(      ) p
+(else) K n
+(         upstr = @upRef.to_s_fancy) p n
+(         ) S
+(if) K
+( upstr) p n
+(            ") S
+(#{upstr}-#{@name}) str
+(") p n
+(         ) S
+(else) K n
+(            @name) p n
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(# returns a representation of this attribute as an array of strings \(its "path"\)) c n
+(   def to_a) p n
+(      ) S
+(if) K
+( @upRef == ) p
+(nil) K n
+(         [@name]) p n
+(      ) S
+(else) K n
+(         @upRef.to_a << @name) p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+(end) N
+() p n
+(# Base class of all hylite sets. It exists to factor out a couple common functions.) c n
+() p n
+(class AbstractHyliteSet) N
+(   ) S
+(# Remove all hylites that don't match the given name) c n
+(   def filter_name\(name\)) p n
+(      HyliteSetView.new\(self\) ) S
+(do) K
+( |hy|) p n
+(         ) S
+(if) K
+( name.kind_of? Regexp) p n
+(            name =~ hy.name_str) N
+(         ) S
+(else) K n
+(            name == hy.name_str) p n
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(# Remove all hylites that don't match the OR of the given groups) c n
+(   def filter_group\(groups\)) p n
+(      groups = [groups] ) S
+(unless) K
+( groups.kind_of? Enumerable) p n
+() N
+(      ) S
+(# return an HSV with the given decider proc) c n
+(      HyliteSetView.new\(self\) ) p
+(do) K
+( |hy|) p n
+() N
+(         ) S
+(# look for any group in the given Enumerable that passes the predicate5) c n
+(         groups.any? ) p
+(do) K
+( |group|) p n
+(            ) S
+(# is group \(as a string\) a prefix of hy.name_str?) c n
+(            hy.name_str.index\(group\) == 0) p n
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(# the OR of the given attributes) c n
+(   def filter_attr\(attrs\)) p n
+(      ) S
+(# protection may not be necessary) c n
+(      attrs = [attrs] ) p
+(unless) K
+( attrs.kind_of? Enumerable) p n
+() N
+(      found_any = ) S
+(false) K n
+(      hsv = HyliteSetView.new\(self\)) p n
+(      hsv.mode = :exclude) N
+() N
+(      attrs.each ) S
+(do) K
+( |) p
+(attr) K
+(|) p n
+(         node = @attribTree.seek\() S
+(attr) K
+(\)) p n
+(         ) S
+(if) K
+( node and not node.hyliteRefs.empty?) p n
+(            hsv.) S
+(include) K
+(.merge\(node.hyliteRefs\)) p n
+(            found_any = ) S
+(true) K n
+(         ) p
+(end) K n
+(      ) p
+(end) K n
+() p n
+(      ) S
+(if) K
+( found_any) p n
+(         hsv) N
+(      ) S
+(else) K n
+(         EmptyHSV.new\(self\)) p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+(end) N
+() p n
+() N
+(# A set of hylites. Contains a list of the hylite objects, and a reference to the root of the attrib) c n
+(# tree. Has convenience methods for iterating the hylites or attributes in various ways.  Is) N
+(# specifically designed to be wrapped by a filter \(set view\) to access only certain hylites or) N
+(# attributes. It inherits methods for creating such a wrapper from its superclass,) N
+(# AbstractHyliteSet.) N
+() p n
+(class HyliteSet < AbstractHyliteSet) N
+(   ) S
+(attr_reader) K
+( :hylites, :attribTree) p n
+() N
+(   def initialize) N
+(      @hylites = Array.new) N
+(      @attribTree = AttribNode.new\(") S
+(_Root) str
+("\)) p n
+(   ) S
+(end) K n
+() p n
+(   def each_name\(&) S
+(proc) K
+(\)) p n
+(      name = @attribTree.seek\(') S
+(_Name) str
+('\)) p n
+(      ) S
+(return) K
+( ) p
+(if) K
+( not name) p n
+(      each_walker\(name, ) S
+(proc) K
+(\)) p n
+(   ) S
+(end) K n
+() p n
+(   def each_anon) N
+(      @hylites.each ) S
+(do) K
+( |hy|) p n
+(         ) S
+(yield) K
+( hy ) p
+(if) K
+( hy.anonymous?) p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+(   ) p n
+(   def each_attr\(&) S
+(proc) K
+(\)) p n
+(      each_walker\(@attribTree, ) S
+(proc) K
+(\)) p n
+(   ) S
+(end) K n
+() p n
+(   ) S
+(# Internal implementation for walking the attrib tree given a starting point. This) c n
+(   ) p
+(# factors the common implementation for each_name and each_attr.) c n
+(   def each_walker\(start, ) p
+(proc) K
+(\)) p n
+(      visit = ) S
+(lambda) K
+( ) p
+(do) K
+( |node|) p n
+(         ) S
+(proc) K
+(.call\(node\) ) p
+(if) K
+( node != start) p n
+(         node.downRefs.keys.sort.each ) S
+(do) K
+( |key|) p n
+(            visit.call\(node.downRefs[key]\)) N
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+(      visit.call\(start\)) p n
+(   ) S
+(end) K n
+(end) N
+() p n
+() N
+(# A filter or wrapper around a HyliteSet, that limits the hylites iterated over to certain) c n
+(# kinds. \(Iterating over all attributes is unchanged.\) It has three modes: in mode :include it) N
+(# includes everything except a given set of hylites. In mode :exclude it excludes everything except) N
+(# a given set of hylites. In mode :decider it delegates that decision to the proc supplied to the) N
+(# constructor. \(The decider proc is expected to take one hylite and return a boolean-ish.\)) N
+(#) N
+(# As a subclass of AbstractHyliteSet, these can also wrap themselves in yet another filter) N
+(# to chain various rules.) N
+(#) N
+(# Members:) N
+(# @mode the mode of this set view) N
+(# @include the set \(actual Set\) of hylites to be included during mode :exclude) N
+(# @exclude the set \(also a Set\) of hylites to be excluded during mode :include) N
+(# @decider the decider Proc that decides whether a given hylite is visible) N
+() p n
+(class HyliteSetView < AbstractHyliteSet) N
+(hylib.rb) (Page 2/6) (Jul 22, 15 11:16) title
+border
+grestore
+(Printed by Aaron Hall) rhead
+() (Wednesday July 22, 2015) (2/4) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (3-4) 3
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 1.905325 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(   ) p
+(attr_accessor) K
+( :mode, :) p
+(include) K
+(, :exclude) p n
+() N
+(   def initialize\(set, &decider\)) N
+(      @backing_set = set) N
+() N
+(      ) S
+(if) K
+( decider) p n
+(         @mode = :decider) N
+(         @decider = decider) N
+(      ) S
+(else) K n
+(         @mode = :) p
+(include) K
+(  ) p
+(# include all except for listed exclusion set) c n
+(         @include = Set.new) p n
+(         @exclude = Set.new) N
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+(   ) p n
+(   def each_name) N
+(      @backing_set.each_name ) S
+(do) K
+( |name|) p n
+(         hylite = name.hyliteRefs[0]  ) S
+(# should be zero or only one for name attribute) c n
+(         ) p
+(next) K
+( ) p
+(unless) K
+( hylite) p n
+(         ) S
+(if) K
+( hylite_is_visible\(hylite\)) p n
+(            ) S
+(yield) K
+( name) p n
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   def each_anon) N
+(      @backing_set.each_anon ) S
+(do) K
+( |hylite|) p n
+(         ) S
+(yield) K
+( hylite ) p
+(if) K
+( hylite_is_visible\(hylite\)) p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   def each_attr\(&) S
+(proc) K
+(\)) p n
+(      @backing_set.each_attr\() S
+(proc) K
+(\)) p n
+(   ) S
+(end) K n
+() p n
+(   def hylite_is_visible\(hy\)) N
+(      ) S
+(case) K
+( @mode) p n
+(      ) S
+(when) K
+( :decider) p n
+(         ) S
+(# delegate to the provided proc whether this hylite is included) c n
+(         @decider.call\(hy\)) p n
+(      ) S
+(when) K
+( :) p
+(include) K n
+(         ) p
+(# include by default, see @exclude set for exceptions) c n
+(         not @exclude.) p
+(include) K
+(?\(hy\)) p n
+(      ) S
+(when) K
+( :exclude) p n
+(         ) S
+(# exclude by default, see @include set for exceptions) c n
+(         @include.) p
+(include) K
+(?\(hy\)) p n
+(      ) S
+(else) K n
+(         ) p
+(raise) K
+( ") p
+(HyliteSetView has unknown mode #{@mode}) str
+(") p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+(end) N
+() p n
+() N
+(# A HyliteSetView wrapper/filter that fails all hylites. It keeps the same interface \(and may be) c n
+(# re-wrapped with other filters\) but it doesn't matter, it fails to propagate the iterators.) N
+() p n
+(class EmptyHSV < AbstractHyliteSet) N
+(   ) S
+(attr_accessor) K
+( :mode, :) p
+(include) K
+(, :exclude) p n
+() N
+(   def initialize\(set\)) N
+(      @backing_set = set) N
+(   ) S
+(end) K n
+() p n
+(   def each_name) N
+(      ) S
+(# do nothing) c n
+(   ) p
+(end) K n
+() p n
+(   def each_anon) N
+(      ) S
+(# do nothing) c n
+(   ) p
+(end) K n
+(end) N
+() p n
+() N
+($extension_to_type_map = {}) N
+(TYPE_TO_EXTENSION_MAP = {) N
+(   :java => [') S
+(java) str
+('],) p n
+(   :c    => [') S
+(c) str
+(', ') p
+(h) str
+('],) p n
+(   :cpp  => [') S
+(c++) str
+(', ') p
+(cpp) str
+('],) p n
+(   :perl => [') S
+(pl) str
+(', ') p
+(perl) str
+('],) p n
+(   :ruby => [') S
+(rb) str
+(', ') p
+(ruby) str
+(', ') p
+(rbw) str
+('],) p n
+(   :text => [') S
+(txt) str
+(', ') p
+(out) str
+('],) p n
+(   :html => [') S
+(html) str
+(', ') p
+(htm) str
+('],) p n
+(   :xml  => [') S
+(xml) str
+(', ') p
+(jtdl) str
+(', ') p
+(jtdli) str
+(', ') p
+(jul) str
+('],) p n
+(   :yaml => [') S
+(yaml) str
+(', ') p
+(yml) str
+(']) p n
+(}) N
+(TYPE_TO_EXTENSION_MAP.each ) S
+(do) K
+( |type, xs|) p n
+(   xs.each{|x| $extension_to_type_map[x] = type}) N
+(end) K n
+() p n
+(# A Scanner is responsible for examining a single file and adding any hylite writings found there to) c n
+(# a HyliteSet. That gets very complicated.) N
+() p n
+(class Scanner) N
+(   @@comment_delimiters = {) N
+(      :java => [') S
+(//) str
+(', ') p
+(/*) str
+(', ') p
+(*/) str
+('],) p n
+(      :c    => [') S
+(//) str
+(', ') p
+(/*) str
+(', ') p
+(*/) str
+('],) p n
+(      :cpp  => [') S
+(//) str
+(', ') p
+(/*) str
+(', ') p
+(*/) str
+('],) p n
+(      :html => [) S
+(nil) K
+(, ') p
+(<!--) str
+(', ') p
+(-->) str
+('],) p n
+(      :perl => [') S
+(\\x23) str
+(', ) p
+(nil) K
+(],               ) p
+(# hash character) c n
+(      :ruby => [') p
+(\\x23) str
+(', ) p
+(nil) K
+(],               ) p
+(# another hash character) c n
+(      :xml  => [) p
+(nil) K
+(, ') p
+(<!--) str
+(', ') p
+(-->) str
+('],) p n
+(      :yaml => [') S
+(\\x23) str
+(', ) p
+(nil) K
+(]) p n
+(   }) N
+(   ) N
+(   @@embedded_delimiters = {) N
+(      ') S
+(\() str
+(' => ') p
+(\)) str
+(',) p n
+(      ') S
+([) str
+(' => ') p
+(]) str
+(',) p n
+(      ') S
+({) str
+(' => ') p
+(}) str
+(',) p n
+(      ') S
+(<) str
+(' => ') p
+(>) str
+(',) p n
+(      ') S
+(\302\253) str
+(' => ') p
+(\302\273) str
+(',) p n
+(      ') S
+(\342M-^@M-^\\) str
+(' => ') p
+(\342M-^@M-^]) str
+(',) p n
+(      ') S
+(\342M-^@M-^X) str
+(' => ') p
+(\342M-^@M-^Y) str
+(',) p n
+(      ') S
+(\342M-^_\250) str
+(' => ') p
+(\342M-^_\251) str
+(',) p n
+(      ') S
+(\342M-^LM-^H) str
+(' => ') p
+(\342M-^LM-^I) str
+(',) p n
+(      ') S
+(\342M-^LM-^J) str
+(' => ') p
+(\342M-^LM-^K) str
+(',) p n
+(      ') S
+(\342\247\274) str
+(' => ') p
+(\342\247\275) str
+(',) p n
+(      ') S
+(\342M-^@\271) str
+(' => ') p
+(\342M-^@\272) str
+(',) p n
+(      ') S
+(\343M-^@M-^P) str
+(' => ') p
+( \343M-^@M-^Q) str
+(') p n
+(   }) N
+() N
+(   @@punt_mode = ) S
+(false) K n
+() p n
+() N
+(   ) S
+(# During the scanning process text that may contain hylites is moved from the file to a buffer of) c n
+(   ) p
+(# CommentParts \(so named because in every file type but :text this is only text inside a) c n
+(   ) p
+(# comment\). Each CommentPart is at most one line, with the line number, and a flag indicated) c n
+(   ) p
+(# whether it's \342M-^@M-^\\terminated\342M-^@M-^] \(for example, the last line of a block comment would ) c n
+(be terminated,) N
+(   ) p
+(# as would a single-line comment, but the first line of a multiline block comment would not.\)) c n
+() p n
+(   class CommentPart) N
+(      ) S
+(attr_reader) K
+( :line, :string, :terminated) p n
+(      ) S
+(attr_writer) K
+( :string) p n
+() N
+(      def initialize\(line, string, terminated\)) N
+(         @line = line) N
+(         @string = string) N
+(         @terminated = terminated) N
+(      ) S
+(end) K n
+() p n
+(      def to_s) N
+(         ") S
+(\(#{@line}|#{@string}|#{@terminated ? '.' : ''}\)) str
+(") p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(# A hylite part is a string representing a writing of a hylite, along with its line number.  In) c n
+(   ) p
+(# the scanning process these are created from CommentParts and are parsed to produce hylites.) c n
+() p n
+(   class HylitePart) N
+(      ) S
+(attr_reader) K
+( :line, :string) p n
+(      ) S
+(attr_writer) K
+( :string) p n
+() N
+(      def initialize\(line, string\)) N
+(         @line = line) N
+(hylib.rb) (Page 3/6) (Jul 22, 15 11:16) title
+border
+/v 1 store
+/x0 x v get 1.905325 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(         @string = string) p n
+(      ) S
+(end) K n
+() p n
+(      def to_s) N
+(         ") S
+(\(#{@line}|#{@string}\)) str
+(") p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(# Initialize the Scanner itself. The HylitePart buffer and CommentPart buffer are empty, and the) c n
+(   ) p
+(# current line number of the file is zero. The default language is :text.) c n
+(   def initialize\(file\)) p n
+(      @file = file) N
+(      ) N
+(      @language = :text) N
+() N
+(      @hy_part_buf = []) N
+(      @comment_part_buf = []) N
+(      @line_no = 0) N
+(   ) S
+(end) K n
+(   ) p n
+() N
+(   def find_all_hylites\(result\)) N
+(      ) S
+(#determine file type) c n
+(      @language = determine_type\(\)) p n
+(      ) N
+(      ) S
+(#puts "   detected language #{@language}") c n
+() p n
+(      ) S
+(if) K
+( @@punt_mode) p n
+(         File.new\(@file, ') S
+(r) str
+('\).each_with_index ) p
+(do) K
+( |line, ix|) p n
+(            hystr = line_hylite\(line\)) N
+(            ) S
+(if) K
+( hystr) p n
+(               hy = parse_hylite_string\(hystr, result\)) N
+(               hy.locations << Location.new\(@file, ix\)) N
+(            ) S
+(end) K n
+(         ) p
+(end) K n
+(      ) p
+(else) K n
+(         ) p
+(#puts "scanning file #{@file}") c n
+(         File.) p
+(open) K
+(\(@file, ') p
+(r) str
+('\) ) p
+(do) K
+( |file|) p n
+(            ) S
+(while) K
+( hp = next_hylite_part\(file\)) p n
+(#               puts "   got hp \342M-^LM-^H#{hp}\342M-^LM-^I") c n
+(               hy = parse_hylite_string\(hp.string, result\)) p n
+(#               puts "      parsed as \342M-^LM-^H#{hy}\342M-^LM-^I") c n
+(               hy.locations << Location.new\(@file, hp.line\)) p n
+(            ) S
+(end) K n
+(         ) p
+(end) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+(   ) p n
+(   def determine_type\(\)) N
+(      ) S
+(# get extension to file) c n
+(      ) p
+(if) K
+( /.*\\.\(.+\)/ =~ @file) p n
+(         type = $extension_to_type_map[$~[1]]) N
+() N
+(         ) S
+(# for now, go with this or use text \(may do fancy checking later\)) c n
+(         type || :text) p n
+(      ) S
+(else) K n
+(         :text) p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   def line_hylite\(line\)) N
+(      ) S
+(if) K
+( /.*\(hylite\\s.*\).*$/ =~ line) p n
+(         $~[1]) N
+(      ) S
+(elsif) K
+( /.*\(hylite:+.*\).*$/ =~ line  ) p
+(# anonymous hylites) c n
+(         $~[1]) p n
+(      ) S
+(else) K n
+(         ) p
+(nil) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(# hylite parts are the string representation and the line number they came from) c n
+(   def next_hylite_part\(file\)) p n
+(      ) S
+(while) K
+( @hy_part_buf.empty?) p n
+(         part = next_comment_part\(file\)) N
+(         ) S
+(return) K
+( ) p
+(nil) K
+( ) p
+(if) K
+( not part  ) p
+(# eof catching) c n
+() p n
+(#         puts "...........comment part \342M-^@M-^\\#{part}\342M-^@M-^]") c n
+() p n
+(         ) S
+(# iterate processing the string of this part \(to allow multiple hylites per part\)) c n
+(         ) p
+(while) K
+( part and part.string and part.string.length > 0) p n
+(            ) S
+(# find \342M-^@M-^\\hylite\342M-^@M-^] in the part, loop if not present, skip over spurious nam) c n
+(ing) N
+(            hy_pos = part.string.index\(") p
+(hylite) str
+("\)) p n
+() N
+(            ) S
+(break) K
+( ) p
+(if) K
+( not hy_pos) p n
+(            ) S
+(unless) K
+( [') p
+(:) str
+(', ') p
+( ) str
+('].) p
+(include) K
+(?\(part.string[hy_pos+6...hy_pos+7]\)) p n
+(               ) S
+(# character immediately after is neither colon nor space) c n
+(               part.string = part.string[hy_pos+7..-1]) p n
+(               ) S
+(next) K n
+(            ) p
+(end) K n
+(#            puts "  found hylite in #{part.string} at #{part.string[hy_pos..-1]}") c n
+() p n
+(            ) S
+(# check before it for grouping character) c n
+(            grouper = ) p
+(if) K
+( hy_pos > 0) p n
+(                         ) S
+(# use regex recapture for unicode-friendliness) c n
+(                         /\(.\)hylite/ =~ part.string) p n
+(                         left_char = $~[1]) N
+(                         ) S
+(#left_char = part.string[hy_pos-1 ... hy_pos]) c n
+(#                         puts "    left char is [#{left_char}]") N
+(                         ) p
+(# grouper will be the matching right delimiter or nil) c n
+(                         @@embedded_delimiters[left_char]) p n
+(                      ) S
+(else) K n
+(                         ) p
+(nil) K n
+(                      ) p
+(end) K n
+() p n
+(#            puts "  grouper #{grouper}" if grouper) c n
+(            ) p
+(unless) K
+( grouper) p n
+(               ) S
+(# no grouping, the bounds of this hylite are determined by the comment \(or text mode\)) c n
+(               ) p
+(if) K
+( part.terminated or @language == :text) p n
+(                  ) S
+(# line mode, the whole rest of the line is one hylite part) c n
+(                  @hy_part_buf << HylitePart.new\(part.line, part.string[hy_pos..-1]\)) p n
+(                  part = ) S
+(nil) K n
+() p n
+(               ) S
+(else) K n
+(                  ) p
+(# block comment mode, the rest of the line is only the beginning) c n
+(                  hypart = HylitePart.new\(part.line, part.string[hy_pos..-1]\)) p n
+() N
+(                  ) S
+(# loop consuming comment parts, appending to ongoing hylite, until terminated) c n
+(                  ) p
+(# also breaks loop on eof) c n
+(                  ) p
+(while) K
+( part and not part.terminated) p n
+(                     part = next_comment_part\(file\)) N
+(                     ) S
+(if) K
+( part) p n
+(                        hypart.string << \(') S
+( ) str
+(' + part.string\)) p n
+(                     ) S
+(end) K n
+(                  ) p
+(end) K n
+() p n
+(                  ) S
+(# buffer the now-completed hylite part \(even if eof\)) c n
+(                  @hy_part_buf << hypart) p n
+(                  part = ) S
+(nil) K n
+(               ) p
+(end) K n
+() p n
+(            ) S
+(else) K n
+(               ) p
+(# grouping, look for matching grouper) c n
+(               groupos = part.string.index\(grouper\)) p n
+(               ) S
+(if) K
+( groupos) p n
+(                  ) S
+(# the grouped hylite part appears all on one line; consume it and) c n
+(                  ) p
+(# loop back to continue processing the rest of this comment part) c n
+(                  ) p
+(# edit: use the RE engine to properly handle unicode) c n
+(                  ) p
+(# edit: or not. \(1 of 2\)) c n
+(#                  re = Regexp.new\(".*\(hylite.*\)\\\\#{grouper}\(.*\)$"\)) N
+(#                  re =~ part.string) N
+(#                  raise "what an odd error!" unless $~) N
+(#                  @hy_part_buf << HylitePart.new\(part.line, $1\)) N
+(#                  part.string = $2) N
+(                  @hy_part_buf << HylitePart.new\(part.line, part.string[hy_pos...groupos]\)) p n
+(                  part.string = part.string[\(groupos+1\) .. -1]) N
+(#                  puts "      made #{@hy_part_buf[-1]} and string is #{part.string}") c n
+(                  ) p n
+(               ) S
+(elsif) K
+( part.terminated) p n
+(#                  puts "    group terminated prematurely on #{part}") c n
+(                  ) p
+(# the hylite may be grouped but by mistake the comment ends first) c n
+(                  ) p
+(# use this much and stop) c n
+(                  @hy_part_buf << HylitePart.new\(part.line, part.string[hy_pos..-1]\)) p n
+(                  part = ) S
+(nil) K n
+(hylib.rb) (Page 4/6) (Jul 22, 15 11:16) title
+border
+grestore
+(Printed by Aaron Hall) rhead
+() (3/4) (Wednesday July 22, 2015) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (5-6) 4
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 1.905325 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(#                  puts "      made #{@hy_part_buf[-1]}") c n
+() p n
+(               ) S
+(else) K n
+(                  ) p
+(# the grouped hylite begins on this line but keeps going, iterate after it) c n
+(                  hypart = HylitePart.new\(part.line, part.string[hy_pos..-1]\)) p n
+(#                  puts "    group begins here, so far, #{hypart}") c n
+() p n
+(                  ) S
+(while) K
+( ) p
+(true) K n
+(                     part = next_comment_part\(file\)) p n
+(                     ) S
+(break) K
+( ) p
+(unless) K
+( part) p n
+() N
+(#                     puts "      next part #{part}") c n
+() p n
+(                     groupos = part.string.index\(grouper\)) N
+(                     ) S
+(if) K
+( groupos) p n
+(                        ) S
+(# found the end of the hylite, finish it, consume the comment part and) c n
+(                        ) p
+(# loop way back to continue its processing for more hylites) c n
+(                        ) p
+(# edit: another place where the RE engine fixes unicoding) c n
+(                        ) p
+(# edit: or perhaps not, in 1.9; may have to change again for 2) c n
+(                        ) p
+(#re = Regexp.new\("\(.*\)\\\\#{grouper}\(.*\)$"\)) c n
+(                        ) p
+(#re =~ part.string) c n
+(                        ) p
+(#raise "another head-scratcher!" unless $~) c n
+(                        ) p
+(#hypart.string << \(' ' + $1\)) c n
+(                        ) p
+(#part.string = $2) c n
+(                        hypart.string << \(') p
+( ) str
+(' + part.string[0...groupos]\)) p n
+(                        part.string = part.string[\(groupos+1\)..-1]) N
+(                        ) S
+(break) K n
+() p n
+(                     ) S
+(elsif) K
+( part.terminated) p n
+(                        ) S
+(# also a grouped hylite that hits the comment end first) c n
+(                        hypart.string << \(') p
+( ) str
+(' + part.string\)) p n
+(                        part = ) S
+(nil) K n
+(                        ) p
+(break) K n
+() p n
+(                     ) S
+(else) K n
+(                        ) p
+(# one line of an onging hylite) c n
+(                        hypart.string << \(') p
+( ) str
+(' + part.string\)) p n
+(                        part = ) S
+(nil) K n
+() p n
+(                     ) S
+(end) K n
+(                  ) p
+(end) K
+( ) p
+(# while true) c n
+() p n
+(                  ) S
+(# buffer the now-completed hylite part \(even if eof\)) c n
+(                  @hy_part_buf << hypart) p n
+(               ) S
+(end) K n
+() p n
+(            ) S
+(end) K
+( ) p
+(# unless grouper) c n
+() p n
+(            ) S
+(# if there's still a part, and it still has some string content, loop back and) c n
+(            ) p
+(# continue parsing \(accounts for lines where one hylite ends and another begins\)) c n
+(         ) p
+(end) K
+( ) p
+(# while part and part.string\342M-^@\246) c n
+() p n
+(         ) S
+(# after processing one or more parts, if the buffer's still empty, loop back) c n
+(      ) p
+(end) K
+( ) p
+(# while @hy_part_buf.empty?) c n
+() p n
+(      ) S
+(# at this point the buffer has something, or eof \(shift returns nil\)) c n
+(      @hy_part_buf.shift) p n
+(   ) S
+(end) K n
+(   ) p n
+(   def next_comment_part\(file\)) N
+(      ) S
+(return) K
+( @comment_part_buf.shift ) p
+(unless) K
+( @comment_part_buf.empty?) p n
+(      fill_comment_part_buf\(file\)) N
+(      ) S
+(return) K
+( @comment_part_buf.shift  ) p
+(# may be nil, indicates eof) c n
+(   ) p
+(end) K n
+() p n
+(   ) S
+(# Fill the comment-part buffer with at least one more CommentPart. If the language of the source) c n
+(   ) p
+(# file is :text this is easy, just get a line. But if not, scan for comments using the delimiters) c n
+(   ) p
+(# of the language. That gets messy.) c n
+(   def fill_comment_part_buf\(file\)) p n
+(      ) S
+(# if file type is :text, just grab a line and MAKE IT UNTERMINATED) c n
+(      ) p
+(if) K
+( @language == :text) p n
+(         line = file.) S
+(gets) K n
+(         ) p
+(if) K
+( line) p n
+(            @line_no += 1) N
+(            @comment_part_buf << CommentPart.new\(@line_no, line.strip, ) S
+(false) K
+(\)) p n
+(         ) S
+(end) K n
+(         ) p
+(return) K n
+(      ) p
+(end) K n
+() p n
+(      ) S
+(# file type has comments, needs serious processing) c n
+(      delimiters = @@comment_delimiters[@language]) p n
+() N
+(      ) S
+(# iterate until at least one CommentPart has been produced from the file) c n
+(      ) p
+(while) K
+( @comment_part_buf.empty?) p n
+(         line = file.) S
+(gets) K n
+(         @line_no += 1) p n
+(         ) S
+(return) K
+( ) p
+(if) K
+( not line  ) p
+(# eof catching) c n
+(         ) p n
+(         ) S
+(while) K
+( line and line.length > 0) p n
+(            ) S
+(# find the first location of a line-comment delimiter if present) c n
+(            line_comment_pos = ) p
+(if) K
+( delimiters[0]) p n
+(                                  line.index\(delimiters[0]\)) N
+(                               ) S
+(else) K n
+(                                  ) p
+(nil) K n
+(                               ) p
+(end) K n
+(            ) p
+(# find the first location of a block-comment delimiter if present) c n
+(            block_comment_pos = ) p
+(if) K
+( delimiters[1]) p n
+(                                   line.index\(delimiters[1]\)) N
+(                                ) S
+(else) K n
+(                                   ) p
+(nil) K n
+(                                ) p
+(end) K n
+(            ) p
+(# find the position of the first one \(if both\)) c n
+(            first_comment_pos = ) p
+(if) K
+( line_comment_pos and block_comment_pos) p n
+(                                   [line_comment_pos, block_comment_pos].min) N
+(                                ) S
+(elsif) K
+( line_comment_pos) p n
+(                                   line_comment_pos) N
+(                                ) S
+(elsif) K
+( block_comment_pos) p n
+(                                   block_comment_pos) N
+(                                ) S
+(else) K n
+(                                   ) p
+(nil) K n
+(                                ) p
+(end) K n
+() p n
+(            ) S
+(if) K
+( not line_comment_pos and not block_comment_pos) p n
+(               ) S
+(# neither type of comment in this line) c n
+(               ) p
+(# consume the line and loop back to get another one) c n
+(               line = ) p
+(nil) K n
+() p n
+(            ) S
+(elsif) K
+( first_comment_pos == line_comment_pos) p n
+(               ) S
+(# line comment is first or only) c n
+(               ) p
+(# the rest of the line is a terminated comment part, then consume the line) c n
+(               sp = line_comment_pos + delimiters[0].length) p n
+(               @comment_part_buf << CommentPart.new\(@line_no, line[sp..-1].strip, ) S
+(true) K
+(\)) p n
+(               line = ) S
+(nil) K n
+() p n
+(            ) S
+(elsif) K
+( first_comment_pos == block_comment_pos) p n
+(               ) S
+(# block comment is first or only) c n
+(               ) p
+(# pre-trim the line to avoid problems) c n
+(               sp = block_comment_pos + delimiters[1].length) p n
+(               line = line[sp..-1]) N
+(               ) N
+(               ) S
+(# look for the matching end-of-block marker) c n
+(               block_comment_end = line.index\(delimiters[2]\)) p n
+(               ) S
+(if) K
+( block_comment_end) p n
+(                  ) S
+(# the block comment appears all on one line) c n
+(                  ) p
+(# consume it as a terminated comment part and loop back to process rest of line) c n
+(                  @comment_part_buf << CommentPart.new\(@line_no, line[0...block_comment_end], ) p
+(true) K
+(\)) p n
+(                  sp = block_comment_end + delimiters[2].length) N
+(                  line = line[sp..-1]) N
+() N
+(               ) S
+(else) K n
+(                  ) p
+(# this line is just the beginning of the block comment) c n
+(                  @comment_part_buf << CommentPart.new\(@line_no, line, ) p
+(false) K
+(\)) p n
+(                  ) N
+(                  ) S
+(# continue pulling lines until a matching terminator is found or eof) c n
+(                  ) p
+(while) K
+( ) p
+(true) K n
+(                     line = file.) p
+(gets) K n
+(                     @line_no += 1) p n
+(                     ) S
+(return) K
+( ) p
+(unless) K
+( line) p n
+(                     ) N
+(                     block_comment_end = line.index\(delimiters[2]\)) N
+(                     ) S
+(if) K
+( block_comment_end) p n
+(                        ) S
+(# just like the all-on-one-line case) c n
+(                        @comment_part_buf << CommentPart.new\(@line_no, line[0...block_comment_end],) p n
+(                                                             ) S
+(true) K
+(\)) p n
+(hylib.rb) (Page 5/6) (Jul 22, 15 11:16) title
+border
+/v 1 store
+/x0 x v get 1.905325 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                        sp = block_comment_end + delimiters[2].length) p n
+(                        line = line[sp..-1]) N
+(                        ) S
+(break) K n
+(                     ) p
+(else) K n
+(                        @comment_part_buf << CommentPart.new\(@line_no, line.strip, ) p
+(false) K
+(\)) p n
+(                     ) S
+(end) K n
+(                  ) p
+(end) K n
+(               ) p
+(end) K n
+(               ) p
+(# end of block-comment handling section) c n
+(            ) p
+(else) K n
+(               ) p
+(# some kind of weird error) c n
+(            ) p
+(end) K n
+(         ) p
+(end) K
+( ) p
+(# while line\342M-^@\246) c n
+(     ) p
+(end) K
+( ) p
+(# while @comment_part_buf.empty?) c n
+() p n
+(   ) S
+(rescue) K
+( Exception => ex) p n
+(      ) S
+(puts) K
+( ") p
+(File associated with exception is [#{file.path}]) str
+(") p n
+(      ) S
+(raise) K
+( ex) p n
+(   ) S
+(end) K n
+() p n
+() N
+(   def parse_hylite_string\(string, hyliteSet\)) N
+(      ) S
+(# first break string into name, attribute and text parts \(any may be missing\)) c n
+(      name, atts, text = string.) p
+(split) K
+(\(/:/\)) p n
+(      atts = "" ) S
+(if) K
+( \(atts == ) p
+(nil) K
+(\)) p n
+(      text = "" ) S
+(if) K
+( \(text == ) p
+(nil) K
+(\)) p n
+(#      puts "      split as [#{name}|#{atts}|#{text}]") c n
+() p n
+(      ) S
+(# parse name into name attribute and retrieve \(possibly contruct\) matching Hylite) c n
+(      nameAttributeString = name.) p
+(sub) K
+(\(/hylite\\s*\([-\\w]*\).*/\) { ') p
+(_Name-) str
+(' + $1 }) p n
+(      ) S
+(if) K
+( nameAttributeString == ') p
+(_Name-) str
+('           ) p
+(# anonymous hylite is always new Hylite) c n
+(         hylite = Hylite.new) p n
+(         hyliteSet.hylites << hylite) N
+(      ) S
+(else) K n
+(         nameAttribute = hyliteSet.attribTree.seek\(nameAttributeString\)) p n
+(#         puts "here nameAttribute is #{nameAttribute.to_s}") c n
+(         ) p
+(if) K
+( nameAttribute == ) p
+(nil) K n
+(            nameAttribute = hyliteSet.attribTree.seekMake\(nameAttributeString\)) p n
+(         ) S
+(end) K n
+(#         puts "the nameAttribute is #{nameAttribute.to_s}") c n
+(#         puts "   its hyliterefs is #{nameAttribute.hyliteRefs}") N
+() p n
+(         hylite = nameAttribute.hyliteRefs[0] ) S
+(# because for name attribute, there's only one Hylite) c n
+() p n
+(         ) S
+(# if this is a new Hylite, create it and link it with attributeTree) c n
+(         ) p
+(if) K
+( hylite == ) p
+(nil) K n
+() p n
+(#            puts "the hylite #{nameAttributeString} is nil, so a new one is created") c n
+() p n
+(            hylite = Hylite.new) N
+(            hyliteSet.hylites << hylite) N
+(            ) S
+(#hylite.attributes << nameAttribute) c n
+(            hylite.add_attribute\(nameAttribute\)) p n
+(            nameAttribute.hyliteRefs << hylite) N
+() N
+(#            puts "    new hyliteRefs is #{nameAttribute.hyliteRefs[0]}") c n
+() p n
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+() p n
+(      ) S
+(# parse attribute section, seekMake and crosslink each attribute) c n
+(      ) p
+(# Modified for 1.9: no longer \342M-^@M-^\\each\342M-^@M-^], now \342M-^@M-^\\each_line\342M-^@M-^], even th) c n
+(ough they aren't lines) N
+(      atts.strip.each_line\(') p
+( ) str
+('\) ) p
+(do) K
+( |attributeString|) p n
+(         attribute = hyliteSet.attribTree.seekMake\(attributeString.) S
+(chomp) K
+(\(') p
+( ) str
+('\)\)) p n
+(         ) S
+(#hylite.attributes << attribute) c n
+(         hylite.add_attribute\(attribute\)) p n
+(         attribute.hyliteRefs << hylite) N
+(      ) S
+(end) K n
+(      ) p n
+(      ) S
+(# add text section to Hylite) c n
+(      hylite.texts << text  ) p
+(if) K
+( text.length > 0) p n
+() N
+(      ) S
+(return) K
+( hylite           ) p
+(# to allow further work with it, if necessary) c n
+(   ) p
+(end) K n
+(end) N
+() p n
+() N
+(class WorkingSet) N
+(   ) S
+(attr_reader) K
+( :base_dir, :see_hidden_files) p n
+(   ) S
+(attr_writer) K
+( :see_hidden_files) p n
+(   ) N
+(   def initialize\(file\)) N
+(      ) S
+(if) K
+( not File::readable?\(file\)) p n
+(         ) S
+(raise) K
+( ") p
+(Can't read working-set file \342M-^@M-^\\#{file}\342M-^@M-^]) str
+(") p n
+(      ) S
+(end) K n
+() p n
+(      ) S
+(# find @base_dir) c n
+(      @base_dir = File::dirname\(file\)) p n
+(      ) N
+(      ) S
+(# open file, parse out all include patterns and exclude patterns) c n
+(      ws_data = YAML::) p
+(load) K
+(\(File.) p
+(open) K
+(\(file\)\)) p n
+(      @include = ws_data[') S
+(include) str
+('] || []) p n
+(      @exclude = ws_data[') S
+(exclude) str
+('] || []) p n
+() N
+(      @see_hidden_files = ) S
+(false) K n
+(   ) p
+(end) K n
+() p n
+(   def each_file) N
+(      flag = ) S
+(if) K
+( @see_hidden_files ) p
+(then) K
+( File::FNM_DOTMATCH ) p
+(else) K
+( 0 ) p
+(end) K n
+() p n
+(      ) S
+(# build a set by unioning globs of each include) c n
+(      files = Set.new) p n
+(      @include.each {|inc| files += Dir::glob\(inc, flag\) }) N
+() N
+(      ) S
+(# prune that set by subtracting globs of each exclude) c n
+(      @exclude.each {|exc| files -= Dir::glob\(exc, flag\) }) p n
+() N
+(      ) S
+(# each path in the set) c n
+(      ) p
+(#    skip if directory) c n
+(      ) p
+(#    pull end name) c n
+(      ) p
+(#    skip if . or ..) c n
+(      ) p
+(#    yield it) c n
+(      files.each ) p
+(do) K
+( |path|) p n
+(         ) S
+(next) K
+( ) p
+(if) K
+( File::directory?\(path\)) p n
+(         fname = File::basename\(path\)) N
+(         ) S
+(next) K
+( ) p
+(if) K
+( fname == ') p
+(.) str
+(') p n
+(         ) S
+(next) K
+( ) p
+(if) K
+( fname == ') p
+(..) str
+(') p n
+(         ) S
+(next) K
+( ) p
+(if) K
+( fname =~ /.*~$/ and not @see_hidden_files) p n
+(         ) N
+(#         puts "visiting [#{path}]") c n
+(         ) p
+(yield) K
+( path) p n
+(      ) S
+(end) K n
+() p n
+(   ) S
+(end) K n
+(end) N
+() p n
+(class ManualSet) N
+(   ) S
+(attr_reader) K
+( :see_hidden_files  ) p
+(# gonna ignore it anyway) c n
+(   ) p
+(attr_writer) K
+( :see_hidden_files) p n
+(   ) N
+(   def initialize\(*file\)) N
+(      @files = []) N
+(      file.each ) S
+(do) K
+( |f|) p n
+(         ) S
+(if) K
+( not File::readable?\(f\)) p n
+(            ) S
+(puts) K
+( ") p
+(Skipping unreadable file #{f}) str
+(") p n
+(         ) S
+(else) K n
+(            @files << f) p n
+(         ) S
+(end) K n
+(      ) p
+(end) K n
+(   ) p
+(end) K n
+() p n
+(   def each_file) N
+(      @files.each ) S
+(do) K
+( |path|) p n
+(         ) S
+(yield) K
+( path) p n
+(      ) S
+(end) K n
+(   ) p
+(end) K n
+(end) N
+(hylib.rb) (Page 6/6) (Jul 22, 15 11:16) title
+border
+grestore
+(Printed by Aaron Hall) rhead
+() (Wednesday July 22, 2015) (4/4) footer
+end % of iso1dict
+pagesave restore
+showpage
+
+%%Trailer
+end
+%%EOF

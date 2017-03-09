@@ -1,0 +1,7 @@
+hylite yan: example-series: this is one
+hylite tan: example >-part: no text other than this
+stuff that won't be included goes here, but there's a (hylite yan)
+      hylite tethera: >-everything:
+hylite methera: example-thing
+hylite pip: >-part-foo example-thing:
+hylite yan-a-dick:: what a world!
